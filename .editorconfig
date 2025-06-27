@@ -1,22 +1,42 @@
+# EditorConfig 配置文件
+# 广西红蚂蚁网络科技有限公司 - ETH Bundle TX 项目
+
 root = true
+
+# 所有文件的通用设置
 [*]
-indent_style=tab
-indent_size=tab
-tab_width=4
-end_of_line=lf
-charset=utf-8
-trim_trailing_whitespace=true
-max_line_length=100
-insert_final_newline=true
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
 
-[*.yml]
-indent_style=space
-indent_size=2
-tab_width=8
-end_of_line=lf
+# TypeScript 和 JavaScript 文件
+[*.{ts,js,tsx,jsx}]
+indent_size = 4
 
-[*.sh]
-indent_style=space
-indent_size=2
-tab_width=8
-end_of_line=lf
+# JSON 文件
+[*.json]
+indent_size = 2
+
+# YAML 文件
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown 文件
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# Solidity 智能合约文件
+[*.sol]
+indent_size = 4
+
+# 配置文件
+[*.{toml,ini}]
+indent_size = 4
+
+# 包管理器锁文件不需要格式化
+[{package-lock.json,yarn.lock,pnpm-lock.yaml}]
+insert_final_newline = false

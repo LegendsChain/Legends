@@ -1,0 +1,93 @@
+[package]
+name = "legends-runtime"
+description = "BitNice 区块链运行时 - 基于比特币 PoW 共识的区块链运行时"
+authors.workspace = true
+version = "0.1.0"
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+edition.workspace = true
+build = "build.rs"
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+# 第三方依赖
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde_json = { workspace = true }
+
+# PoW 算法相关依赖
+sha2 = { version = "0.10", default-features = false }
+primitive-types = { version = "0.12", default-features = false, features = ["scale-info"] }
+
+# Polkadot SDK - 运行时核心
+polkadot-sdk = { workspace = true, features = [
+    # 核心运行时
+    "pallet-aura",
+    "pallet-authorship", 
+    "pallet-balances",
+    "pallet-grandpa",
+    "pallet-sudo",
+    "pallet-timestamp",
+    "pallet-transaction-payment",
+    "pallet-utility",
+    "frame-executive",
+    "frame-support",
+    "frame-system",
+    "frame-try-runtime",
+    "sp-api",
+    "sp-block-builder",
+    "sp-consensus-aura",
+    "sp-consensus-grandpa",
+    "sp-core",
+    "sp-genesis-builder", 
+    "sp-inherents",
+    "sp-offchain",
+    "sp-runtime",
+    "sp-session",
+    "sp-std",
+    "sp-storage",
+    "sp-transaction-pool",
+    "sp-version",
+    # PoW 共识相关
+    "sp-consensus-pow",
+    "pallet-authorship",
+]}
+
+# 本地依赖
+pallet-template = { workspace = true }
+
+[build-dependencies]
+substrate-wasm-builder = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+std = [
+    "parity-scale-codec/std",
+    "polkadot-sdk/std",
+    "scale-info/std",
+    "serde_json/std",
+    "sha2/std",
+    "primitive-types/std",
+    "pallet-template/std",
+    "substrate-wasm-builder",
+]
+
+runtime-benchmarks = [
+    "polkadot-sdk/runtime-benchmarks",
+    "pallet-template/runtime-benchmarks",
+]
+
+try-runtime = [
+    "polkadot-sdk/try-runtime",
+    "pallet-template/try-runtime",
+]
+
+experimental = [
+    "polkadot-sdk/experimental",
+] 

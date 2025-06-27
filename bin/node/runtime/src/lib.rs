@@ -16,11 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! The Substrate runtime. This can be compiled with `#[no_std]`, ready for Wasm.
+//! The BitNice runtime. This can be compiled with `#[no_std]`, ready for Wasm.
+//! BitNice 使用 PoW 共识算法，基于 SHA256 双重哈希
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
+
+/// BitNice PoW 算法实现
+pub mod pow_algorithm;
+/// BitNice PoW 共识引擎
+pub mod pow_consensus;
 
 
 use sp_std::prelude::*;
@@ -105,14 +111,14 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("legends"),
-	impl_name: create_runtime_str!("legends-node"),
+	spec_name: create_runtime_str!("bitnice"),
+	impl_name: create_runtime_str!("bitnice-node"),
 	authoring_version: 10,
 	// Per convention: if the runtime behavior changes, increment spec_version
 	// and set impl_version to 0. If only runtime
 	// implementation changes and behavior does not, then leave spec_version as
 	// is and increment impl_version.
-	spec_version: 6,
+	spec_version: 7,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -316,35 +322,20 @@ impl pallet_scheduler::Config for Runtime {
 	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS;
-	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
-	pub const ReportLongevity: u64 =
-		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
-}
+// 移除 BABE 配置，因为我们使用 PoW 共识
+// parameter_types! {
+// 	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS;
+// 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
+// 	pub const ReportLongevity: u64 =
+// 		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
+// }
 
-impl pallet_babe::Config for Runtime {
-	type EpochDuration = EpochDuration;
-	type ExpectedBlockTime = ExpectedBlockTime;
-	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
-
-	type KeyOwnerProofSystem = Historical;
-
-	type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		pallet_babe::AuthorityId,
-	)>>::Proof;
-
-	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		pallet_babe::AuthorityId,
-	)>>::IdentificationTuple;
-
-	type HandleEquivocation =
-		pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
-
-	type WeightInfo = ();
-}
+// impl pallet_babe::Config for Runtime {
+// 	type EpochDuration = EpochDuration;
+// 	type ExpectedBlockTime = ExpectedBlockTime;
+// 	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
+// 	...
+// }
 
 parameter_types! {
 	pub const IndexDeposit: Balance = 1 * DOLLARS;
@@ -397,7 +388,8 @@ parameter_types! {
 
 impl pallet_timestamp::Config for Runtime {
 	type Moment = Moment;
-	type OnTimestampSet = Babe;
+	// PoW 不需要像 BABE 那样的时间戳回调，使用空的回调
+	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
@@ -407,16 +399,19 @@ parameter_types! {
 }
 
 impl pallet_authorship::Config for Runtime {
-	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
+	// PoW 系统中，暂时不使用复杂的作者查找机制
+	type FindAuthor = ();
 	type UncleGenerations = UncleGenerations;
 	type FilterUncle = ();
-	type EventHandler = (Staking, ImOnline);
+	// PoW 系统暂时不与 Staking 集成，只保留 ImOnline
+	type EventHandler = (ImOnline,);
 }
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
 		pub grandpa: Grandpa,
-		pub babe: Babe,
+		// 移除 BABE，因为我们使用 PoW
+		// pub babe: Babe,
 		pub im_online: ImOnline,
 		pub authority_discovery: AuthorityDiscovery,
 	}
@@ -424,14 +419,18 @@ impl_opaque_keys! {
 
 parameter_types! {
 	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(17);
+	// PoW 会话配置 - 每600个区块（约1小时）一个会话
+	pub const Period: BlockNumber = 600;
+	pub const Offset: BlockNumber = 0;
 }
 
 impl pallet_session::Config for Runtime {
 	type Event = Event;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = pallet_staking::StashOf<Self>;
-	type ShouldEndSession = Babe;
-	type NextSessionRotation = Babe;
+	// PoW 使用定期会话（每小时一次），而不是基于BABE的动态会话
+	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>; // 每600块（约1小时）
+	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
 	type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
 	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
@@ -1015,7 +1014,8 @@ construct_runtime!(
 	{
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
 		Utility: pallet_utility::{Module, Call, Event},
-		Babe: pallet_babe::{Module, Call, Storage, Config, Inherent, ValidateUnsigned},
+		// 移除 BABE，使用 PoW 共识
+		// Babe: pallet_babe::{Module, Call, Storage, Config, Inherent, ValidateUnsigned},
 		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
 		Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
 		Indices: pallet_indices::{Module, Call, Storage, Config<T>, Event<T>},
@@ -1189,58 +1189,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_consensus_babe::BabeApi<Block> for Runtime {
-		fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
-			// The choice of `c` parameter (where `1 - c` represents the
-			// probability of a slot being empty), is done in accordance to the
-			// slot duration and expected target block time, for safely
-			// resisting network delays of maximum two seconds.
-			// <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
-			sp_consensus_babe::BabeGenesisConfiguration {
-				slot_duration: Babe::slot_duration(),
-				epoch_length: EpochDuration::get(),
-				c: PRIMARY_PROBABILITY,
-				genesis_authorities: Babe::authorities(),
-				randomness: Babe::randomness(),
-				allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryPlainSlots,
-			}
-		}
-
-		fn current_epoch_start() -> sp_consensus_babe::Slot {
-			Babe::current_epoch_start()
-		}
-
-		fn current_epoch() -> sp_consensus_babe::Epoch {
-			Babe::current_epoch()
-		}
-
-		fn next_epoch() -> sp_consensus_babe::Epoch {
-			Babe::next_epoch()
-		}
-
-		fn generate_key_ownership_proof(
-			_slot: sp_consensus_babe::Slot,
-			authority_id: sp_consensus_babe::AuthorityId,
-		) -> Option<sp_consensus_babe::OpaqueKeyOwnershipProof> {
-			use codec::Encode;
-
-			Historical::prove((sp_consensus_babe::KEY_TYPE, authority_id))
-				.map(|p| p.encode())
-				.map(sp_consensus_babe::OpaqueKeyOwnershipProof::new)
-		}
-
-		fn submit_report_equivocation_unsigned_extrinsic(
-			equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
-			key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
-		) -> Option<()> {
-			let key_owner_proof = key_owner_proof.decode()?;
-
-			Babe::submit_unsigned_equivocation_report(
-				equivocation_proof,
-				key_owner_proof,
-			)
-		}
-	}
+	// 移除 BABE API 实现，因为我们使用 PoW 共识
+	// impl sp_consensus_babe::BabeApi<Block> for Runtime { ... }
 
 	impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
 		fn authorities() -> Vec<AuthorityDiscoveryId> {
@@ -1364,7 +1314,8 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, pallet_babe, Babe);
+			// 移除 BABE 基准测试，因为我们使用 PoW
+			// add_benchmark!(params, batches, pallet_babe, Babe);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_bounties, Bounties);
 			add_benchmark!(params, batches, pallet_collective, Council);

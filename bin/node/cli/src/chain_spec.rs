@@ -247,7 +247,10 @@ pub fn testnet_genesis(
 
 	let num_endowed_accounts = endowed_accounts.len();
 
-	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	// BitNice (BN) 总量设置为 2.1 亿枚代币
+	// 平均分配给初始账户，每个账户获得约 1000 万枚 BN
+	const TOTAL_SUPPLY: Balance = 210_000_000 * DOLLARS; // 2.1 亿 BN
+	const ENDOWMENT: Balance = 10_000_000 * DOLLARS; // 每个初始账户 1000 万 BN
 	const STASH: Balance = ENDOWMENT / 1000;
 
 	GenesisConfig {

@@ -1,0 +1,82 @@
+[package]
+name = "legends-node"
+description = "BitNice 区块链节点 - 基于比特币 PoW 共识的区块链节点"
+authors.workspace = true
+version = "0.1.0"
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+edition.workspace = true
+build = "build.rs"
+
+[[bin]]
+name = "legends-node"
+path = "src/main.rs"
+
+[dependencies]
+# 第三方依赖
+parity-scale-codec = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+futures = { workspace = true, features = ["thread-pool"] }
+jsonrpsee = { workspace = true, features = ["server"] }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["macros", "sync"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# Polkadot SDK
+polkadot-sdk = { workspace = true, features = [
+    # Client & Service
+    "sc-cli",
+    "sc-executor", 
+    "sc-network",
+    "sc-service",
+    "sc-telemetry",
+    "sc-transaction-pool",
+    "sc-transaction-pool-api",
+    "sc-offchain",
+    "sc-consensus-grandpa",
+    "sc-rpc-api",
+    "sc-basic-authorship",
+    "sc-chain-spec",
+    "sc-rpc",
+    "sc-network-sync",
+    # PoW 共识
+    "sc-consensus-pow",
+    # Primitives
+    "sp-core",
+    "sp-runtime",
+    "sp-consensus",
+    "sp-consensus-grandpa",
+    "sp-timestamp",
+    "sp-inherents",
+    "sp-keyring",
+    "sp-keystore",
+    "sp-blockchain",
+    "sp-transaction-storage-proof",
+    # Frame
+    "frame-system",
+    # "frame-benchmarking",          # 暂时移除基准测试相关依赖
+    # "frame-benchmarking-cli",      # 暂时移除基准测试相关依赖
+    "pallet-transaction-payment-rpc",
+    "substrate-frame-rpc-system",
+]}
+
+substrate-prometheus-endpoint = { workspace = true }
+
+# Local Dependencies
+legends-runtime = { workspace = true }
+
+[build-dependencies]
+substrate-build-script-utils = { workspace = true }
+
+[features]
+default = []
+runtime-benchmarks = [
+    # "polkadot-sdk/runtime-benchmarks",    # 暂时禁用基准测试
+    # "legends-runtime/runtime-benchmarks", # 暂时禁用基准测试
+]
+try-runtime = [
+    "polkadot-sdk/try-runtime",
+    "legends-runtime/try-runtime",
+] 

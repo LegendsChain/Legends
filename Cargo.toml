@@ -1,257 +1,74 @@
 [workspace]
+resolver = "2"
 members = [
-	"bin/node/bench",
-	"bin/node/browser-testing",
-	"bin/node/cli",
-	"bin/node/executor",
-	"bin/node/primitives",
-	"bin/node/rpc",
-	"bin/node/rpc-client",
-	"bin/node/runtime",
-	"bin/node/testing",
-	"bin/utils/chain-spec-builder",
-	"bin/utils/subkey",
-	"client/api",
-	"client/authority-discovery",
-	"client/basic-authorship",
-	"client/block-builder",
-	"client/chain-spec",
-	"client/chain-spec/derive",
-	"client/cli",
-	"client/consensus/aura",
-	"client/consensus/babe",
-	"client/consensus/babe/rpc",
-	"client/consensus/common",
-	"client/consensus/epochs",
-	"client/consensus/manual-seal",
-	"client/consensus/pow",
-	"client/consensus/slots",
-	"client/consensus/uncles",
-	"client/db",
-	"client/executor",
-	"client/executor/common",
-	"client/executor/runtime-test",
-	"client/executor/wasmi",
-	"client/executor/wasmtime",
-	"client/finality-grandpa",
-	"client/finality-grandpa-warp-sync",
-	"client/informant",
-	"client/keystore",
-	"client/light",
-	"client/network",
-	"client/network-gossip",
-	"client/network/test",
-	"client/offchain",
-	"client/peerset",
-	"client/proposer-metrics",
-	"client/rpc",
-	"client/rpc-api",
-	"client/rpc-servers",
-	"client/service",
-	"client/service/test",
-	"client/state-db",
-	"client/sync-state-rpc",
-	"client/telemetry",
-	"client/tracing",
-	"client/tracing/proc-macro",
-	"client/transaction-pool",
-	"client/transaction-pool/graph",
-	"frame/assets",
-	"frame/atomic-swap",
-	"frame/aura",
-	"frame/authority-discovery",
-	"frame/authorship",
-	"frame/babe",
-	"frame/balances",
-	"frame/benchmarking",
-	"frame/bounties",
-	"frame/collective",
-	"frame/contracts",
-	"frame/contracts/rpc",
-	"frame/contracts/rpc/runtime-api",
-	"frame/democracy",
-	"frame/elections",
-	"frame/example",
-	"frame/example-offchain-worker",
-	"frame/example-parallel",
-	"frame/executive",
-	"frame/grandpa",
-	"frame/identity",
-	"frame/im-online",
-	"frame/indices",
-	"frame/lottery",
-	"frame/membership",
-	"frame/merkle-mountain-range",
-	"frame/merkle-mountain-range/primitives",
-	"frame/metadata",
-	"frame/multisig",
-	"frame/nicks",
-	"frame/node-authorization",
-	"frame/offences",
-	"frame/proxy",
-	"frame/randomness-collective-flip",
-	"frame/recovery",
-	"frame/scheduler",
-	"frame/scored-pool",
-	"frame/session",
-	"frame/session/benchmarking",
-	"frame/society",
-	"frame/staking",
-	"frame/staking/fuzzer",
-	"frame/staking/reward-curve",
-	"frame/sudo",
-	"frame/support",
-	"frame/support/procedural",
-	"frame/support/procedural/tools",
-	"frame/support/procedural/tools/derive",
-	"frame/support/test",
-	"frame/system",
-	"frame/system/benchmarking",
-	"frame/system/rpc/runtime-api",
-	"frame/timestamp",
-	"frame/transaction-payment",
-	"frame/transaction-payment/rpc",
-	"frame/transaction-payment/rpc/runtime-api",
-	"frame/treasury",
-	"frame/tips",
-	"frame/utility",
-	"frame/vesting",
-	"primitives/allocator",
-	"primitives/api",
-	"primitives/api/proc-macro",
-	"primitives/api/test",
-	"primitives/application-crypto",
-	"primitives/application-crypto/test",
-	"primitives/arithmetic",
-	"primitives/arithmetic/fuzzer",
-	"primitives/authority-discovery",
-	"primitives/authorship",
-	"primitives/block-builder",
-	"primitives/blockchain",
-	"primitives/chain-spec",
-	"primitives/consensus/aura",
-	"primitives/consensus/babe",
-	"primitives/consensus/common",
-	"primitives/consensus/pow",
-	"primitives/consensus/vrf",
-	"primitives/core",
-	"primitives/database",
-	"primitives/debug-derive",
-	"primitives/externalities",
-	"primitives/election-providers",
-	"primitives/finality-grandpa",
-	"primitives/inherents",
-	"primitives/io",
-	"primitives/keyring",
-	"primitives/keystore",
-	"primitives/npos-elections",
-	"primitives/npos-elections/compact",
-	"primitives/npos-elections/fuzzer",
-	"primitives/offchain",
-	"primitives/panic-handler",
-	"primitives/rpc",
-	"primitives/runtime",
-	"primitives/runtime-interface",
-	"primitives/runtime-interface/proc-macro",
-	"primitives/runtime-interface/test",
-	"primitives/runtime-interface/test-wasm",
-	"primitives/runtime-interface/test-wasm-deprecated",
-	"primitives/sandbox",
-	"primitives/serializer",
-	"primitives/session",
-	"primitives/staking",
-	"primitives/state-machine",
-	"primitives/std",
-	"primitives/storage",
-	"primitives/tasks",
-	"primitives/test-primitives",
-	"primitives/timestamp",
-	"primitives/tracing",
-	"primitives/transaction-pool",
-	"primitives/trie",
-	"primitives/utils",
-	"primitives/version",
-	"primitives/wasm-interface",
-	"test-utils/client",
-	"test-utils/derive",
-	"test-utils/runtime",
-	"test-utils/runtime/client",
-	"test-utils/runtime/transaction-pool",
-	"test-utils/test-crate",
-	"utils/browser",
-	"utils/build-script-utils",
-	"utils/fork-tree",
-	"utils/frame/benchmarking-cli",
-	"utils/frame/frame-utilities-cli",
-	"utils/frame/rpc/support",
-	"utils/frame/rpc/system",
-	"utils/prometheus",
-	"utils/wasm-builder",
+	"node",
+	"pallets/*",
+	"runtime",
 ]
 
-# The list of dependencies below (which can be both direct and indirect dependencies) are crates
-# that are suspected to be CPU-intensive, and that are unlikely to require debugging (as some of
-# their debug info might be missing) or to require to be frequently recompiled. We compile these
-# dependencies with `opt-level=3` even in "dev" mode in order to make "dev" mode more usable.
-# The majority of these crates are cryptographic libraries.
-#
-# Note that this does **not** affect crates that depend on Substrate. In other words, if you add
-# a dependency on Substrate, you have to copy-paste this list in your own `Cargo.toml` (assuming
-# that you want the same list). This list is only relevant when running `cargo build` from within
-# the Substrate workspace.
-#
-# If you see an error mentioning "profile package spec ... did not match any packages", it
-# probably concerns this list.
-#
-# This list is ordered alphabetically.
-[profile.dev.package]
-aes-soft = { opt-level = 3 }
-aesni = { opt-level = 3 }
-blake2 = { opt-level = 3 }
-blake2-rfc = { opt-level = 3 }
-blake2b_simd = { opt-level = 3 }
-chacha20poly1305 = { opt-level = 3 }
-cranelift-codegen = { opt-level = 3 }
-cranelift-wasm = { opt-level = 3 }
-crc32fast = { opt-level = 3 }
-crossbeam-deque = { opt-level = 3 }
-crossbeam-queue = { opt-level = 3 }
-crypto-mac = { opt-level = 3 }
-curve25519-dalek = { opt-level = 3 }
-ed25519-dalek = { opt-level = 3 }
-flate2 = { opt-level = 3 }
-futures-channel = { opt-level = 3 }
-hashbrown = { opt-level = 3 }
-h2 = { opt-level = 3 }
-hash-db = { opt-level = 3 }
-hmac = { opt-level = 3 }
-httparse = { opt-level = 3 }
-integer-sqrt = { opt-level = 3 }
-keccak = { opt-level = 3 }
-libm = { opt-level = 3 }
-librocksdb-sys = { opt-level = 3 }
-libsecp256k1 = { opt-level = 3 }
-libz-sys = { opt-level = 3 }
-mio = { opt-level = 3 }
-nalgebra = { opt-level = 3 }
-num-bigint = { opt-level = 3 }
-parking_lot = { opt-level = 3 }
-parking_lot_core = { opt-level = 3 }
-percent-encoding = { opt-level = 3 }
-primitive-types = { opt-level = 3 }
-ring = { opt-level = 3 }
-rustls = { opt-level = 3 }
-sha2 = { opt-level = 3 }
-sha3 = { opt-level = 3 }
-smallvec = { opt-level = 3 }
-snow = { opt-level = 3 }
-twox-hash = { opt-level = 3 }
-uint = { opt-level = 3 }
-wasmi = { opt-level = 3 }
-x25519-dalek = { opt-level = 3 }
-yamux = { opt-level = 3 }
-zeroize = { opt-level = 3 }
+[workspace.package]
+authors = ["health"]
+edition = "2021"
+repository = "https://github.com/health/Legends"
+license = "GPL-3.0-only"
+homepage = "https://github.com/health/Legends"
+
+[workspace.lints.rust]
+suspicious_double_ref_op = { level = "allow", priority = 2 }
+
+[workspace.lints.clippy]
+all = { level = "allow", priority = 0 }
+correctness = { level = "warn", priority = 1 }
+complexity = { level = "warn", priority = 1 }
+if-same-then-else = { level = "allow", priority = 2 }
+zero-prefixed-literal = { level = "allow", priority = 2 }
+type_complexity = { level = "allow", priority = 2 }
+nonminimal-bool = { level = "allow", priority = 2 }
+borrowed-box = { level = "allow", priority = 2 }
+too-many-arguments = { level = "allow", priority = 2 }
+unnecessary_cast = { level = "allow", priority = 2 }
+identity-op = { level = "allow", priority = 2 }
+useless_conversion = { level = "allow", priority = 2 }
+
+[workspace.dependencies]
+# 外部依赖 - 使用与 polkadot-sdk 兼容的版本
+parity-scale-codec = { version = "3.6.12", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11.6", default-features = false, features = ["derive"] }
+serde = { version = "1.0.206", default-features = false, features = ["derive", "alloc"] }
+clap = { version = "4.5.3" }
+futures = { version = "0.3.30" }
+jsonrpsee = { version = "0.24.3", features = ["server"] }
+serde_json = { version = "1.0.128" }
+thiserror = { version = "1.0.65" }
+tokio = { version = "1.39.2" }
+tracing = { version = "0.1.40" }
+tracing-subscriber = { version = "0.3.18" }
+
+# Polkadot SDK 依赖
+polkadot-sdk = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master", default-features = false }
+
+# 额外需要的 substrate 依赖
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
+
+# 基础框架依赖 - 移除可能有问题的 benchmarking-cli
+# frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
+
+# PoW 相关
+sha2 = { version = "0.10", default-features = false }
+primitive-types = { version = "0.13", default-features = false, features = ["scale-info"] }
+
+# Local dependencies  
+legends-runtime = { path = "runtime" }
+pallet-template = { path = "pallets/template" }
+
+# 版本强制解析以避免冲突
+fixed-hash = { version = "0.8", default-features = false, features = ["scale-info"] }
+uint = { version = "0.10", default-features = false }
+
+
 
 [profile.release]
-# Substrate runtime requires unwinding.
 panic = "unwind"

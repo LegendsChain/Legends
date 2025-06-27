@@ -1,0 +1,30 @@
+{
+  "name": "BitNice",
+  "id": "bitnice",
+  "chainType": "Live",
+  "bootNodes": [],
+  "telemetryEndpoints": null,
+  "protocolId": "bitnice",
+  "properties": {
+    "tokenSymbol": "BN",
+    "tokenDecimals": 18,
+    "ss58Format": 42
+  },
+  "consensusEngine": null,
+  "genesis": {
+    "runtime": {
+      "system": {
+        "code": "0x"
+      },
+      "balances": {
+        "balances": []
+      },
+      "sudo": {
+        "key": null
+      },
+      "grandpa": {
+        "authorities": []
+      }
+    }
+  }
+} 

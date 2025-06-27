@@ -18,10 +18,14 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 serde = { version = "1.0.102", optional = true }
 static_assertions = "1.1.0"
 hex-literal = { version = "0.3.1", optional = true }
+# PoW 算法相关依赖
+sha2 = { version = "0.9", default-features = false }
+primitive-types = { version = "0.10", default-features = false, features = ["scale-info"] }
 
-# primitives
+# primitives - PoW 相关
 sp-authority-discovery = { version = "3.0.0", default-features = false, path = "../../../primitives/authority-discovery" }
-sp-consensus-babe = { version = "0.9.0", default-features = false, path = "../../../primitives/consensus/babe" }
+sp-consensus-pow = { version = "0.9.0", default-features = false, path = "../../../primitives/consensus/pow" }
+# sp-consensus-babe = { version = "0.9.0", default-features = false, path = "../../../primitives/consensus/babe" } # 移除 BABE
 sp-block-builder = { path = "../../../primitives/block-builder", default-features = false, version = "3.0.0"}
 sp-inherents = { version = "3.0.0", default-features = false, path = "../../../primitives/inherents" }
 node-primitives = { version = "2.0.0", default-features = false, path = "../primitives" }
@@ -46,7 +50,7 @@ frame-system-rpc-runtime-api = { version = "3.0.0", default-features = false, pa
 pallet-assets = { version = "3.0.0", default-features = false, path = "../../../frame/assets" }
 pallet-authority-discovery = { version = "3.0.0", default-features = false, path = "../../../frame/authority-discovery" }
 pallet-authorship = { version = "3.0.0", default-features = false, path = "../../../frame/authorship" }
-pallet-babe = { version = "3.0.0", default-features = false, path = "../../../frame/babe" }
+# pallet-babe = { version = "3.0.0", default-features = false, path = "../../../frame/babe" } # 移除 BABE，使用 PoW
 pallet-balances = { version = "3.0.0", default-features = false, path = "../../../frame/balances" }
 pallet-bounties = { version = "3.0.0", default-features = false, path = "../../../frame/bounties" }
 pallet-collective = { version = "3.0.0", default-features = false, path = "../../../frame/collective" }
@@ -97,8 +101,11 @@ std = [
 	"pallet-assets/std",
 	"pallet-authority-discovery/std",
 	"pallet-authorship/std",
-	"sp-consensus-babe/std",
-	"pallet-babe/std",
+	"sp-consensus-pow/std",
+	# "sp-consensus-babe/std", # 移除 BABE
+	# "pallet-babe/std", # 移除 BABE
+	"sha2/std",
+	"primitive-types/std",
 	"pallet-balances/std",
 	"pallet-bounties/std",
 	"sp-block-builder/std",
@@ -158,7 +165,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
-	"pallet-babe/runtime-benchmarks",
+	# "pallet-babe/runtime-benchmarks", # 移除 BABE 基准测试
 	"pallet-balances/runtime-benchmarks",
 	"pallet-bounties/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
