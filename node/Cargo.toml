@@ -1,71 +1,106 @@
 [package]
-name = "legends-node"
-description = "BitNice 区块链节点 - 基于比特币 PoW 共识的区块链节点"
-authors.workspace = true
+name = "bitnice-node"
 version = "0.1.0"
-homepage.workspace = true
-repository.workspace = true
-license.workspace = true
-edition.workspace = true
+edition = "2021"
+authors = ["differs"]
+description = "BitNice Node - A Bitcoin-inspired blockchain node built with Polkadot SDK"
+license = "GPL-3.0"
 build = "build.rs"
 
 [[bin]]
-name = "legends-node"
+name = "bitnice-node"
 path = "src/main.rs"
 
 [dependencies]
-# 第三方依赖
-parity-scale-codec = { workspace = true }
+# 命令行参数解析
 clap = { workspace = true, features = ["derive"] }
-futures = { workspace = true, features = ["thread-pool"] }
-jsonrpsee = { workspace = true, features = ["server"] }
-serde_json = { workspace = true }
-tokio = { workspace = true, features = ["macros", "sync"] }
+
+# 异步运行时
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+futures = { workspace = true }
+
+# 日志和错误处理
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
 
-# Polkadot SDK
-polkadot-sdk = { workspace = true, features = [
-    # Client & Service
-    "sc-cli",
-    "sc-executor", 
-    "sc-network",
-    "sc-service",
-    "sc-telemetry",
-    "sc-transaction-pool",
-    "sc-transaction-pool-api",
-    "sc-offchain",
-    "sc-consensus-grandpa",
-    "sc-rpc-api",
-    "sc-basic-authorship",
-    "sc-chain-spec",
-    "sc-rpc",
-    "sc-network-sync",
-    # PoW 共识
-    "sc-consensus-pow",
-    # Primitives
-    "sp-core",
-    "sp-runtime",
-    "sp-consensus",
-    "sp-consensus-grandpa",
-    "sp-timestamp",
-    "sp-inherents",
-    "sp-keyring",
-    "sp-keystore",
-    "sp-blockchain",
-    "sp-transaction-storage-proof",
-    # Frame
-    "frame-system",
-    # "frame-benchmarking",          # 暂时移除基准测试相关依赖
-    # "frame-benchmarking-cli",      # 暂时移除基准测试相关依赖
-    "pallet-transaction-payment-rpc",
-    "substrate-frame-rpc-system",
-]}
+# 序列化
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 
-substrate-prometheus-endpoint = { workspace = true }
+# Substrate 客户端核心组件
+sc-cli = { workspace = true }
+sc-executor = { workspace = true }
+sc-network = { workspace = true }
+sc-service = { workspace = true }
+sc-telemetry = { workspace = true }
+sc-transaction-pool = { workspace = true }
+sc-transaction-pool-api = { workspace = true }
+sc-consensus = { workspace = true }
+sc-consensus-pow = { workspace = true }
+sc-client-api = { workspace = true }
+sc-basic-authorship = { workspace = true }
+sc-rpc = { workspace = true }
+sc-rpc-api = { workspace = true }
 
-# Local Dependencies
-legends-runtime = { workspace = true }
+# Substrate 运行时组件
+sp-api = { workspace = true }
+sp-block-builder = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-consensus = { workspace = true }
+sp-consensus-pow = { workspace = true }
+sp-core = { workspace = true }
+sp-inherents = { workspace = true }
+sp-keyring = { workspace = true }
+sp-runtime = { workspace = true }
+sp-timestamp = { workspace = true }
+sp-transaction-pool = { workspace = true }
+sp-io = { workspace = true }
+
+# Frame 组件
+frame-benchmarking = { workspace = true }
+frame-benchmarking-cli = { workspace = true }
+
+frame-system = { workspace = true }
+
+# RPC 相关
+jsonrpsee = { workspace = true, features = ["server"] }
+pallet-transaction-payment-rpc = { workspace = true }
+
+# Frame System RPC
+frame-system-rpc-runtime-api = { workspace = true }
+
+# 本地运行时
+bitnice-runtime = { path = "../runtime" }
+
+# 加密和挖矿相关
+sha2 = { workspace = true }
+hex = { workspace = true }
+rand = { workspace = true }
+
+# 编解码
+codec = { workspace = true }
+
+# 系统信息
+num_cpus = "1.16"
+
+# 基准测试和尝试运行时（可选功能）
+
+# 加密库
+sha3 = "0.10"
+
+# 密钥存储
+sc-keystore = { workspace = true }
+
+# 数据库
+sc-client-db = { workspace = true }
+
+# 共识相关
+sc-consensus-grandpa = { workspace = true }
+
+# 测试依赖
+tempfile = "3.8"
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
@@ -73,10 +108,8 @@ substrate-build-script-utils = { workspace = true }
 [features]
 default = []
 runtime-benchmarks = [
-    # "polkadot-sdk/runtime-benchmarks",    # 暂时禁用基准测试
-    # "legends-runtime/runtime-benchmarks", # 暂时禁用基准测试
+    "bitnice-runtime/runtime-benchmarks",
+    "frame-benchmarking/runtime-benchmarks",
+    "frame-benchmarking-cli/runtime-benchmarks",
 ]
-try-runtime = [
-    "polkadot-sdk/try-runtime",
-    "legends-runtime/try-runtime",
-] 
+try-runtime = ["bitnice-runtime/try-runtime", "frame-system/try-runtime"]

@@ -1,48 +1,123 @@
-//! # BitNice RPC 模块
-//! 
-//! 为 BitNice 节点提供 JSON-RPC API 接口
+//! BitNice 节点 RPC 服务配置
+//!
+//! 极简版本 - 只提供基本的空RPC服务
 
 use std::sync::Arc;
 
 use jsonrpsee::RpcModule;
-use legends_runtime::{opaque::Block, AccountId, Balance, Nonce};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-/// 完整的 RPC 依赖
+use bitnice_runtime::{opaque::Block, AccountId, Balance, Nonce};
+
+/// 完整节点 RPC 依赖
 pub struct FullDeps<C, P> {
-    /// 客户端
+    /// 客户端引用
     pub client: Arc<C>,
-    /// 交易池
+    /// 交易池引用
     pub pool: Arc<P>,
     /// 是否拒绝不安全的 RPC 调用
-    pub deny_unsafe: bool,
+    pub deny_unsafe: sc_rpc_api::DenyUnsafe,
 }
 
-/// 实例化所有 RPC 扩展
+/// 创建完整节点的 RPC 服务
 pub fn create_full<C, P>(
-    deps: FullDeps<C, P>,
+    _deps: FullDeps<C, P>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
-    C: ProvideRuntimeApi<Block>
-        + HeaderBackend<Block>
-        + HeaderMetadata<Block, Error = BlockChainError>
-        + 'static,
-    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C: ProvideRuntimeApi<Block>,
+    C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError>,
+    C: Send + Sync + 'static,
     C::Api: BlockBuilder<Block>,
-    P: TransactionPool + 'static,
+    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce>,
+    P: TransactionPool<Block = Block> + Send + Sync + 'static,
 {
-    use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-    use substrate_frame_rpc_system::{System, SystemApiServer};
+    // 创建空的RPC模块 - 暂时不添加任何功能
+    let io = RpcModule::new(());
+    
+    // TODO: 等API稳定后重新添加RPC功能
+    // - 系统RPC调用
+    // - 交易支付RPC调用  
+    // - 自定义BitNice RPC调用
+    
+    Ok(io)
+}
 
-    let mut module = RpcModule::new(());
-    let FullDeps { client, pool, deny_unsafe } = deps;
+/// 挖矿统计信息结构
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct MiningStats {
+    /// 当前难度
+    pub current_difficulty: u64,
+    /// 网络哈希率
+    pub network_hashrate: u64,
+    /// 区块时间（秒）
+    pub block_time: u64,
+    /// 今日挖出的区块数
+    pub blocks_mined_today: u64,
+}
 
-    module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
-    module.merge(TransactionPayment::new(client).into_rpc())?;
+/// RPC 错误类型
+#[derive(Debug, thiserror::Error)]
+pub enum RpcError {
+    #[error("客户端错误: {0}")]
+    Client(String),
 
-    Ok(module)
-} 
+    #[error("交易池错误: {0}")]
+    TransactionPool(String),
+
+    #[error("运行时错误: {0}")]
+    Runtime(String),
+
+    #[error("内部错误: {0}")]
+    Internal(String),
+}
+
+impl From<RpcError> for jsonrpsee::core::Error {
+    fn from(error: RpcError) -> Self {
+        match error {
+            RpcError::Client(msg) => jsonrpsee::core::Error::Custom(msg),
+            RpcError::TransactionPool(msg) => jsonrpsee::core::Error::Custom(msg),
+            RpcError::Runtime(msg) => jsonrpsee::core::Error::Custom(msg),
+            RpcError::Internal(msg) => jsonrpsee::core::Error::Custom(msg),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mining_stats_serialization() {
+        let stats = MiningStats {
+            current_difficulty: 1000,
+            network_hashrate: 1000000,
+            block_time: 6,
+            blocks_mined_today: 14400,
+        };
+
+        // 测试序列化
+        let serialized = serde_json::to_string(&stats).unwrap();
+        assert!(serialized.contains("current_difficulty"));
+        assert!(serialized.contains("1000"));
+
+        // 测试反序列化
+        let deserialized: MiningStats = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized.current_difficulty, 1000);
+        assert_eq!(deserialized.network_hashrate, 1000000);
+        assert_eq!(deserialized.block_time, 6);
+        assert_eq!(deserialized.blocks_mined_today, 14400);
+    }
+
+    #[test]
+    fn test_rpc_error_conversion() {
+        let error = RpcError::Client("测试错误".to_string());
+        let jsonrpc_error: jsonrpsee::core::Error = error.into();
+
+        // 确保错误能够正确转换
+        assert!(matches!(jsonrpc_error, jsonrpsee::core::Error::Custom(_)));
+    }
+}

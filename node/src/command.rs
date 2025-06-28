@@ -1,117 +1,127 @@
-//! # BitNice 节点命令处理
-//! 
-//! 处理各种 CLI 命令的执行逻辑
+//! BitNice 节点命令处理模块
+//!
+//! 处理所有命令行子命令的执行逻辑
+
+use std::sync::Arc;
 
 use crate::{
     chain_spec,
     cli::{Cli, Subcommand},
-    service,
+    service::{self, PartialComponents},
 };
-use legends_runtime::{Block, RuntimeApi};
-use sc_cli::SubstrateCli;
-use sc_service::PartialComponents;
+use bitnice_runtime::{Block, RuntimeApi};
+use sc_cli::{
+    ChainSpec, CheckBlockCmd, ExportBlocksCmd, ExportStateCmd, ImportBlocksCmd, PurgeChainCmd,
+    RevertCmd, Role, RuntimeVersion, SubstrateCli,
+};
+use sc_service::{config::PrometheusConfig, Configuration, TaskManager};
+use sp_core::crypto::Ss58AddressFormat;
 
-impl SubstrateCli for Cli {
-    fn impl_name() -> String {
-        "BitNice Node".into()
-    }
-
-    fn impl_version() -> String {
-        env!("SUBSTRATE_CLI_IMPL_VERSION").into()
-    }
-
-    fn description() -> String {
-        env!("CARGO_PKG_DESCRIPTION").into()
-    }
-
-    fn author() -> String {
-        env!("CARGO_PKG_AUTHORS").into()
-    }
-
-    fn support_url() -> String {
-        "https://github.com/health/Legends/issues".into()
-    }
-
-    fn copyright_start_year() -> i32 {
-        2024
-    }
-
-    fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-        Ok(match id {
-            "dev" => Box::new(chain_spec::development_config()),
-            "local" => Box::new(chain_spec::local_testnet_config()),
-            "" | "bitnice" => Box::new(chain_spec::bitnice_config()),
-            path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
-        })
-    }
-}
-
-/// 解析并运行命令
-pub fn run() -> sc_cli::Result<()> {
+/// 运行命令处理器
+pub async fn run() -> sc_cli::Result<()> {
     let cli = Cli::parse();
 
     match &cli.subcommand {
-        Some(Subcommand::Key(cmd)) => cmd.run(&cli),
+        Some(Subcommand::Key(cmd)) => {
+            // 处理密钥管理命令
+            cmd.run(&cli)
+        }
         Some(Subcommand::BuildSpec(cmd)) => {
+            // 处理构建链规范命令
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
         }
         Some(Subcommand::CheckBlock(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents { client, task_manager, import_queue, .. } =
-                    service::new_partial(&config)?;
+            // 处理检查区块命令
+            construct_async_run!(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    import_queue,
+                    ..
+                } = service::new_partial(&config)?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
         Some(Subcommand::ExportBlocks(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents { client, task_manager, .. } = service::new_partial(&config)?;
+            // 处理导出区块命令
+            construct_async_run!(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    ..
+                } = service::new_partial(&config)?;
                 Ok((cmd.run(client, config.database), task_manager))
             })
         }
         Some(Subcommand::ExportState(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents { client, task_manager, .. } = service::new_partial(&config)?;
+            // 处理导出状态命令
+            construct_async_run!(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    ..
+                } = service::new_partial(&config)?;
                 Ok((cmd.run(client, config.chain_spec), task_manager))
             })
         }
         Some(Subcommand::ImportBlocks(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents { client, task_manager, import_queue, .. } =
-                    service::new_partial(&config)?;
+            // 处理导入区块命令
+            construct_async_run!(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    import_queue,
+                    ..
+                } = service::new_partial(&config)?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
         Some(Subcommand::PurgeChain(cmd)) => {
+            // 处理清除链数据命令
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run(config.database))
         }
         Some(Subcommand::Revert(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents { client, task_manager, backend, .. } =
-                    service::new_partial(&config)?;
-                Ok((cmd.run(client, backend, None), task_manager))
+            // 处理回滚区块命令
+            construct_async_run!(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    backend,
+                    ..
+                } = service::new_partial(&config)?;
+                let aux_revert = Box::new(|client, _, blocks| {
+                    sc_consensus_pow::revert(client, backend, blocks)
+                });
+                Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
             })
         }
-        // 暂时禁用基准测试功能以避免依赖冲突
-        // Some(Subcommand::Benchmark(cmd)) => {
-        //     let runner = cli.create_runner(cmd)?;
-        //     // ... 基准测试代码已注释掉
-        // }
+        #[cfg(feature = "runtime-benchmarks")]
+        Some(Subcommand::Benchmark(cmd)) => {
+            // 处理基准测试命令
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|config| {
+                // 检查是否启用了基准测试功能
+                if cfg!(feature = "runtime-benchmarks") {
+                    return cmd.run::<bitnice_runtime::Hash, ()>(config);
+                }
+
+                Err("基准测试功能未启用。使用 --features=runtime-benchmarks 重新编译。".into())
+            })
+        }
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
+            // 处理尝试运行时命令
             use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
             let runner = cli.create_runner(cmd)?;
             runner.async_run(|config| {
-                let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                let registry = config
+                    .prometheus_config
+                    .as_ref()
+                    .map(|cfg| &cfg.registry);
                 let task_manager =
-                    sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                        .map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
+                    sc_service::TaskManager::new(config.tokio_handle.clone(), registry)?;
                 let info_provider = timestamp_with_aura_info(6000);
                 Ok((
                     cmd.run::<Block, ExtendedHostFunctions<
@@ -122,87 +132,197 @@ pub fn run() -> sc_cli::Result<()> {
                 ))
             })
         }
+        Some(Subcommand::Mine(cmd)) => {
+            // 处理挖矿命令
+            run_mining_command(cmd, &cli).await
+        }
         None => {
+            // 运行完整节点
             let runner = cli.create_runner(&cli.run)?;
-            runner.run_node_until_exit(|config| async move {
-                service::new_full(config).map_err(sc_cli::Error::Service)
-            })
+            runner
+                .run_node_until_exit(|config| async move {
+                    service::new_full(config).map_err(sc_cli::Error::Service)
+                })
+                .await
         }
     }
 }
 
-fn inherent_benchmark_data() -> Result<sp_inherents::InherentData, sc_cli::Error> {
-    use sp_inherents::InherentDataProvider;
-    let mut inherent_data = sp_inherents::InherentData::new();
+/// 运行挖矿命令
+async fn run_mining_command(
+    cmd: &crate::cli::MineCmd,
+    cli: &Cli,
+) -> sc_cli::Result<()> {
+    use tracing::{info, warn};
 
-    let d = std::time::Duration::from_millis(0);
-    let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
+    info!("🚀 启动 BitNice 挖矿节点");
+    info!("⚡ 挖矿线程数: {}", cmd.threads());
 
-    futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))
-        .map_err(|e| format!("providing inherent data: {:?}", e))?;
+    if let Some(coinbase) = cmd.coinbase_address() {
+        info!("💰 奖励地址: {}", coinbase);
+    } else {
+        warn!("⚠️  未指定奖励地址，将使用默认地址");
+    }
 
-    Ok(inherent_data)
+    if let Some(target) = cmd.difficulty_target() {
+        info!("🎯 难度目标: {}", target);
+    }
+
+    if cmd.is_verbose() {
+        info!("📝 启用详细日志模式");
+    }
+
+    // 创建运行器并启动挖矿节点
+    let runner = cli.create_runner(&cmd.base)?;
+    runner
+        .run_node_until_exit(|mut config| async move {
+            // 确保节点以验证者身份运行（挖矿需要）
+            config.role = Role::Authority;
+
+            // 启动完整节点服务，包含挖矿功能
+            service::new_full(config).map_err(sc_cli::Error::Service)
+        })
+        .await
 }
 
-// 暂时注释掉基准测试相关的导入和结构体
-// use frame_benchmarking_cli::{
-//     extrinsic_factory::ExtrinsicFactory, BenchmarkExtrinsicBuilder, ExtrinsicBuilder,
-// };
-
-// /// Generates `Balances::TransferKeepAlive` extrinsics for the benchmarks.
-// struct TransferKeepAliveBuilder;
-
-// impl BenchmarkExtrinsicBuilder for TransferKeepAliveBuilder {
-//     fn pallet(&self) -> &str {
-//         "balances"
-//     }
-
-//     fn extrinsic(&self) -> &str {
-//         "transfer_keep_alive"
-//     }
-
-//     fn build(&self, nonce: u32) -> std::result::Result<legends_runtime::UncheckedExtrinsic, &'static str> {
-//         let acc = sp_keyring::AccountKeyring::Bob.pair();
-//         let extrinsic: legends_runtime::UncheckedExtrinsic = pallet_balances::Call::transfer_keep_alive {
-//             dest: sp_keyring::AccountKeyring::Charlie.to_account_id().into(),
-//             value: 1,
-//         }
-//         .into();
-
-//         Ok(extrinsic)
-//     }
-// }
-
-// /// Generates `System::Remark` extrinsics for the benchmarks.
-// struct RemarkBuilder {
-//     client: std::sync::Arc<service::FullClient>,
-// }
-
-// impl RemarkBuilder {
-//     /// Creates a new [`Self`] from the given client.
-//     fn new(client: std::sync::Arc<service::FullClient>) -> Self {
-//         Self { client }
-//     }
-// }
-
-// impl ExtrinsicBuilder for RemarkBuilder {
-//     fn pallet(&self) -> &str {
-//         "system"
-//     }
-
-//     fn extrinsic(&self) -> &str {
-//         "remark"
-//     }
-
-//     fn build(&self, nonce: u32) -> std::result::Result<legends_runtime::UncheckedExtrinsic, &'static str> {
-//         let acc = sp_keyring::AccountKeyring::Bob.pair();
-//         let extrinsic: legends_runtime::UncheckedExtrinsic = frame_system::Call::remark { remark: vec![] }.into();
-
-//         Ok(extrinsic)
-//     }
-// }
-
+/// 时间戳信息提供者（用于 try-runtime）
 #[cfg(feature = "try-runtime")]
-fn timestamp_with_aura_info(slot_duration: u64) -> impl try_runtime_cli::TryRuntimeInfoProvider {
-    try_runtime_cli::substrate_info(slot_duration)
-} 
+fn timestamp_with_aura_info(
+    millis: u64,
+) -> impl Fn() -> Box<dyn sp_inherents::InherentDataProvider> {
+    move || {
+        let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        Box::new(timestamp)
+    }
+}
+
+/// 构造异步运行宏
+macro_rules! construct_async_run {
+    (|$config:ident| $task:expr) => {{
+        let runner = cli.create_runner(cmd)?;
+        runner.async_run(|$config| $task).await
+    }};
+}
+
+use construct_async_run;
+
+/// 获取原生运行时版本
+pub fn get_native_runtime_version() -> &'static RuntimeVersion {
+    &bitnice_runtime::VERSION
+}
+
+/// 链规范加载器
+pub struct ChainSpecLoader;
+
+impl ChainSpecLoader {
+    /// 加载链规范
+    pub fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+        Ok(match id {
+            "dev" => Box::new(chain_spec::development_config()?),
+            "" | "local" => Box::new(chain_spec::local_testnet_config()?),
+            "staging" => Box::new(chain_spec::staging_testnet_config()?),
+            path => Box::new(chain_spec::ChainSpec::from_json_file(
+                std::path::PathBuf::from(path),
+            )?),
+        })
+    }
+
+    /// 获取所有可用的链规范 ID
+    pub fn available_chains() -> Vec<&'static str> {
+        vec!["dev", "local", "staging"]
+    }
+}
+
+/// 验证配置
+pub fn validate_config(config: &Configuration) -> Result<(), String> {
+    // 验证数据库配置
+    match &config.database {
+        sc_client_db::DatabaseSource::RocksDb { path, .. } => {
+            if !path.exists() {
+                std::fs::create_dir_all(path)
+                    .map_err(|e| format!("无法创建数据库目录: {}", e))?;
+            }
+        }
+        _ => {}
+    }
+
+    // 验证网络配置
+    if config.network.listen_addresses.is_empty() {
+        return Err("至少需要一个监听地址".to_string());
+    }
+
+    // 验证 RPC 配置
+    if config.rpc_methods == sc_service::config::RpcMethods::Unsafe {
+        tracing::warn!("⚠️  启用了不安全的 RPC 方法，仅用于开发环境");
+    }
+
+    Ok(())
+}
+
+/// 命令执行结果
+#[derive(Debug)]
+pub enum CommandResult {
+    /// 成功完成
+    Success,
+    /// 带有消息的成功
+    SuccessWithMessage(String),
+    /// 错误
+    Error(String),
+}
+
+impl std::fmt::Display for CommandResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CommandResult::Success => write!(f, "命令执行成功"),
+            CommandResult::SuccessWithMessage(msg) => write!(f, "命令执行成功: {}", msg),
+            CommandResult::Error(err) => write!(f, "命令执行失败: {}", err),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chain_spec_loader() {
+        // 测试开发环境链规范加载
+        let spec = ChainSpecLoader::load_spec("dev");
+        assert!(spec.is_ok());
+
+        // 测试本地测试网链规范加载
+        let spec = ChainSpecLoader::load_spec("local");
+        assert!(spec.is_ok());
+
+        // 测试预发布测试网链规范加载
+        let spec = ChainSpecLoader::load_spec("staging");
+        assert!(spec.is_ok());
+    }
+
+    #[test]
+    fn test_available_chains() {
+        let chains = ChainSpecLoader::available_chains();
+        assert!(chains.contains(&"dev"));
+        assert!(chains.contains(&"local"));
+        assert!(chains.contains(&"staging"));
+    }
+
+    #[test]
+    fn test_command_result_display() {
+        let success = CommandResult::Success;
+        assert_eq!(success.to_string(), "命令执行成功");
+
+        let success_with_msg = CommandResult::SuccessWithMessage("测试消息".to_string());
+        assert_eq!(success_with_msg.to_string(), "命令执行成功: 测试消息");
+
+        let error = CommandResult::Error("测试错误".to_string());
+        assert_eq!(error.to_string(), "命令执行失败: 测试错误");
+    }
+
+    #[test]
+    fn test_native_runtime_version() {
+        let version = get_native_runtime_version();
+        assert_eq!(version.spec_name.as_ref(), "bitnice");
+        assert_eq!(version.impl_name.as_ref(), "bitnice");
+    }
+}

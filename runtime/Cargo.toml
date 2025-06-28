@@ -1,93 +1,128 @@
 [package]
-name = "legends-runtime"
-description = "BitNice 区块链运行时 - 基于比特币 PoW 共识的区块链运行时"
-authors.workspace = true
+name = "bitnice-runtime"
 version = "0.1.0"
-homepage.workspace = true
-repository.workspace = true
-license.workspace = true
-edition.workspace = true
-build = "build.rs"
-
-[lints]
-workspace = true
-
-[package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
+edition = "2021"
+authors = ["differs"]
+description = "BitNice Runtime - A Bitcoin-inspired blockchain runtime built with Polkadot SDK"
+license = "GPL-3.0"
 
 [dependencies]
-# 第三方依赖
-parity-scale-codec = { workspace = true }
-scale-info = { workspace = true }
-serde_json = { workspace = true }
+# 编解码
+codec = { workspace = true, default-features = false, features = ["derive"] }
+scale-info = { workspace = true, default-features = false, features = [
+    "derive",
+] }
 
-# PoW 算法相关依赖
-sha2 = { version = "0.10", default-features = false }
-primitive-types = { version = "0.12", default-features = false, features = ["scale-info"] }
+# Substrate 原语
+sp-api = { workspace = true, default-features = false }
+sp-block-builder = { workspace = true, default-features = false }
+sp-consensus-pow = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+sp-genesis-builder = { workspace = true, default-features = false }
+sp-inherents = { workspace = true, default-features = false }
+sp-offchain = { workspace = true, default-features = false }
+sp-runtime = { workspace = true, default-features = false }
+sp-session = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
+sp-transaction-pool = { workspace = true, default-features = false }
+sp-version = { workspace = true, default-features = false }
 
-# Polkadot SDK - 运行时核心
-polkadot-sdk = { workspace = true, features = [
-    # 核心运行时
-    "pallet-aura",
-    "pallet-authorship", 
-    "pallet-balances",
-    "pallet-grandpa",
-    "pallet-sudo",
-    "pallet-timestamp",
-    "pallet-transaction-payment",
-    "pallet-utility",
-    "frame-executive",
-    "frame-support",
-    "frame-system",
-    "frame-try-runtime",
-    "sp-api",
-    "sp-block-builder",
-    "sp-consensus-aura",
-    "sp-consensus-grandpa",
-    "sp-core",
-    "sp-genesis-builder", 
-    "sp-inherents",
-    "sp-offchain",
-    "sp-runtime",
-    "sp-session",
-    "sp-std",
-    "sp-storage",
-    "sp-transaction-pool",
-    "sp-version",
-    # PoW 共识相关
-    "sp-consensus-pow",
-    "pallet-authorship",
-]}
+# Frame 核心组件
+frame-executive = { workspace = true, default-features = false }
+frame-support = { workspace = true, default-features = false }
+frame-system = { workspace = true, default-features = false }
+frame-system-benchmarking = { workspace = true, default-features = false, optional = true }
+frame-system-rpc-runtime-api = { workspace = true, default-features = false }
+frame-try-runtime = { workspace = true, default-features = false, optional = true }
 
-# 本地依赖
-pallet-template = { workspace = true }
+# 基础 Pallets
+pallet-balances = { workspace = true, default-features = false }
+pallet-sudo = { workspace = true, default-features = false }
+pallet-timestamp = { workspace = true, default-features = false }
+pallet-transaction-payment = { workspace = true, default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { workspace = true, default-features = false }
+
+# 基准测试
+frame-benchmarking = { workspace = true, default-features = false, optional = true }
+
+# 序列化（仅在 std 特性下使用）
+serde = { workspace = true, default-features = false, features = [
+    "derive",
+    "alloc",
+], optional = true }
+
+# 加密和挖矿相关
+sha2 = { workspace = true, default-features = false }
+hex = { workspace = true, default-features = false, features = ["alloc"] }
 
 [build-dependencies]
-substrate-wasm-builder = { workspace = true, optional = true }
+substrate-wasm-builder = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-    "parity-scale-codec/std",
-    "polkadot-sdk/std",
+    "codec/std",
     "scale-info/std",
-    "serde_json/std",
+    "serde/std",
+
+    # Substrate 原语
+    "sp-api/std",
+    "sp-block-builder/std",
+    "sp-consensus-pow/std",
+    "sp-core/std",
+    "sp-genesis-builder/std",
+    "sp-inherents/std",
+    "sp-offchain/std",
+    "sp-runtime/std",
+    "sp-session/std",
+    "sp-std/std",
+    "sp-transaction-pool/std",
+    "sp-version/std",
+
+    # Frame 组件
+    "frame-executive/std",
+    "frame-support/std",
+    "frame-system/std",
+    "frame-system-rpc-runtime-api/std",
+    "frame-try-runtime?/std",
+
+    # Pallets
+    "pallet-balances/std",
+    "pallet-sudo/std",
+    "pallet-timestamp/std",
+    "pallet-transaction-payment/std",
+    "pallet-transaction-payment-rpc-runtime-api/std",
+
+    # 基准测试
+    "frame-benchmarking?/std",
+    "frame-system-benchmarking?/std",
+
+    # 加密库
     "sha2/std",
-    "primitive-types/std",
-    "pallet-template/std",
-    "substrate-wasm-builder",
+    "hex/std",
+
+    # 构建工具已在 build-dependencies 中处理
 ]
 
 runtime-benchmarks = [
-    "polkadot-sdk/runtime-benchmarks",
-    "pallet-template/runtime-benchmarks",
+    "frame-benchmarking/runtime-benchmarks",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "frame-system-benchmarking/runtime-benchmarks",
+    "pallet-balances/runtime-benchmarks",
+    "pallet-sudo/runtime-benchmarks",
+    "pallet-timestamp/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
 ]
 
 try-runtime = [
-    "polkadot-sdk/try-runtime",
-    "pallet-template/try-runtime",
+    "frame-executive/try-runtime",
+    "frame-support/try-runtime",
+    "frame-system/try-runtime",
+    "frame-try-runtime/try-runtime",
+    "pallet-balances/try-runtime",
+    "pallet-sudo/try-runtime",
+    "pallet-timestamp/try-runtime",
+    "pallet-transaction-payment/try-runtime",
+    "sp-runtime/try-runtime",
 ]
-
-experimental = [
-    "polkadot-sdk/experimental",
-] 

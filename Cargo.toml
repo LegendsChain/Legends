@@ -1,74 +1,100 @@
 [workspace]
+members = ["node", "runtime"]
 resolver = "2"
-members = [
-	"node",
-	"pallets/*",
-	"runtime",
-]
-
-[workspace.package]
-authors = ["health"]
-edition = "2021"
-repository = "https://github.com/health/Legends"
-license = "GPL-3.0-only"
-homepage = "https://github.com/health/Legends"
-
-[workspace.lints.rust]
-suspicious_double_ref_op = { level = "allow", priority = 2 }
-
-[workspace.lints.clippy]
-all = { level = "allow", priority = 0 }
-correctness = { level = "warn", priority = 1 }
-complexity = { level = "warn", priority = 1 }
-if-same-then-else = { level = "allow", priority = 2 }
-zero-prefixed-literal = { level = "allow", priority = 2 }
-type_complexity = { level = "allow", priority = 2 }
-nonminimal-bool = { level = "allow", priority = 2 }
-borrowed-box = { level = "allow", priority = 2 }
-too-many-arguments = { level = "allow", priority = 2 }
-unnecessary_cast = { level = "allow", priority = 2 }
-identity-op = { level = "allow", priority = 2 }
-useless_conversion = { level = "allow", priority = 2 }
 
 [workspace.dependencies]
-# 外部依赖 - 使用与 polkadot-sdk 兼容的版本
-parity-scale-codec = { version = "3.6.12", default-features = false, features = ["derive"] }
-scale-info = { version = "2.11.6", default-features = false, features = ["derive"] }
-serde = { version = "1.0.206", default-features = false, features = ["derive", "alloc"] }
-clap = { version = "4.5.3" }
-futures = { version = "0.3.30" }
-jsonrpsee = { version = "0.24.3", features = ["server"] }
-serde_json = { version = "1.0.128" }
-thiserror = { version = "1.0.65" }
-tokio = { version = "1.39.2" }
-tracing = { version = "0.1.40" }
-tracing-subscriber = { version = "0.3.18" }
+# Polkadot SDK
+polkadot-sdk = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
 
-# Polkadot SDK 依赖
-polkadot-sdk = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master", default-features = false }
-
-# 额外需要的 substrate 依赖
-substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
-substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
-substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
-
-# 基础框架依赖 - 移除可能有问题的 benchmarking-cli
-# frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
-
-# PoW 相关
-sha2 = { version = "0.10", default-features = false }
-primitive-types = { version = "0.13", default-features = false, features = ["scale-info"] }
-
-# Local dependencies  
-legends-runtime = { path = "runtime" }
-pallet-template = { path = "pallets/template" }
-
-# 版本强制解析以避免冲突
-fixed-hash = { version = "0.8", default-features = false, features = ["scale-info"] }
-uint = { version = "0.10", default-features = false }
+# Substrate 框架核心组件
+frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+frame-executive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+frame-try-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
 
 
+# Substrate 原语
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-consensus-pow = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-offchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-session = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-version = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
 
-[profile.release]
-panic = "unwind"
+# Substrate 客户端
+sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-consensus-pow = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-network = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-rpc-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-keystore = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-client-db = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+sc-consensus-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+
+# Substrate 内置 Pallets
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+
+# 通用依赖
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+    "derive",
+] }
+scale-info = { version = "2.10.0", default-features = false, features = [
+    "derive",
+] }
+serde = { version = "1.0.196", default-features = false, features = [
+    "derive",
+    "alloc",
+] }
+serde_json = "1.0.113"
+clap = { version = "4.4.18", features = ["derive"] }
+futures = "0.3.30"
+tokio = { version = "1.35", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+anyhow = "1.0.79"
+thiserror = "1.0.56"
+tempfile = "3.8"
+
+# 挖矿和加密相关
+sha2 = { version = "0.10.8", default-features = false }
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+rand = { version = "0.8.5", default-features = false }
+
+# 构建工具
+substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+
+# 可选工具
+
+# RPC 相关
+jsonrpsee = { version = "0.20", features = ["server"] }
+
+# 其他运行时原语
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
